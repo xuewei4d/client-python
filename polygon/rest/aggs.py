@@ -1,5 +1,5 @@
 from .base import BaseClient
-from typing import Optional, Any, Dict, List, Union, Iterator
+from typing import Optional, Any, Dict, List, Union, Iterator, Awaitable
 from .models import Agg, GroupedDailyAgg, DailyOpenCloseAgg, PreviousCloseAgg, Sort
 from urllib3 import HTTPResponse
 from datetime import datetime, date
@@ -22,7 +22,7 @@ class AggsClient(BaseClient):
         params: Optional[Dict[str, Any]] = None,
         raw: bool = False,
         options: Optional[RequestOptionBuilder] = None,
-    ) -> Union[Iterator[Agg], HTTPResponse]:
+    ) -> Awaitable[Union[Iterator[Agg], HTTPResponse]]:
         """
         List aggregate bars for a ticker over a given date range in custom time window sizes.
 

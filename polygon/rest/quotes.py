@@ -1,5 +1,5 @@
 from .base import BaseClient
-from typing import Optional, Any, Dict, Union, Iterator
+from typing import Optional, Any, Dict, Union, Iterator, Awaitable
 from .models import (
     Quote,
     LastQuote,
@@ -31,7 +31,7 @@ class QuotesClient(BaseClient):
         params: Optional[Dict[str, Any]] = None,
         raw: bool = False,
         options: Optional[RequestOptionBuilder] = None,
-    ) -> Union[Iterator[Quote], HTTPResponse]:
+    ) -> Awaitable[Union[Iterator[Quote], HTTPResponse]]:
         """
         Get quotes for a ticker symbol in a given time range.
 

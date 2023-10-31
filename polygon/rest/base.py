@@ -12,6 +12,8 @@ from ..logging import get_logger
 import logging
 from urllib.parse import urlencode
 from ..exceptions import AuthError, BadResponse
+from aiolimiter import AsyncLimiter
+from httpx import AsyncClient
 
 logger = get_logger("RESTClient")
 version = "unknown"
@@ -60,13 +62,15 @@ class BaseClient:
 
         # https://urllib3.readthedocs.io/en/stable/reference/urllib3.poolmanager.html
         # https://urllib3.readthedocs.io/en/stable/reference/urllib3.connectionpool.html#urllib3.HTTPConnectionPool
-        self.client = urllib3.PoolManager(
-            num_pools=num_pools,
-            headers=self.headers,  # default headers sent with each request.
-            ca_certs=certifi.where(),
-            cert_reqs="CERT_REQUIRED",
-            retries=retry_strategy,  # use the customized Retry instance
-        )
+        # self.client = urllib3.PoolManager(
+        #     num_pools=num_pools,
+        #     headers=self.headers,  # default headers sent with each request.
+        #     ca_certs=certifi.where(),
+        #     cert_reqs="CERT_REQUIRED",
+        #     retries=retry_strategy,  # use the customized Retry instance
+        # )
+        self.client = AsyncClient()
+        self.limiter = AsyncLimiter(100, 1)
 
         self.timeout = urllib3.Timeout(connect=connect_timeout, read=read_timeout)
 
@@ -79,9 +83,9 @@ class BaseClient:
             self.json = json
 
     def _decode(self, resp):
-        return self.json.loads(resp.data.decode("utf-8"))
+        return self.json.loads(resp.content.decode("utf-8"))
 
-    def _get(
+    async def _get(
         self,
         path: str,
         params: Optional[dict] = None,
@@ -105,19 +109,17 @@ class BaseClient:
                 )
             print(f"Request URL: {full_url}")
             print(f"Request Headers: {print_headers}")
-
-        resp = self.client.request(
-            "GET",
+        async with self.limiter:
+            resp = await self.client.get(
             self.BASE + path,
-            fields=params,
-            headers=headers,
-        )
+            params=params,
+            headers=headers)
 
         if self.trace:
             resp_headers_dict = dict(resp.headers.items())
             print(f"Response Headers: {resp_headers_dict}")
 
-        if resp.status != 200:
+        if resp.status_code != 200:
             raise BadResponse(resp.data.decode("utf-8"))
 
         if raw:
@@ -191,7 +193,7 @@ class BaseClient:
             return self.headers
         return {**headers, **self.headers}
 
-    def _paginate_iter(
+    async def _paginate_iter(
         self,
         path: str,
         params: dict,
@@ -200,7 +202,7 @@ class BaseClient:
         options: Optional[RequestOptionBuilder] = None,
     ):
         while True:
-            resp = self._get(
+            resp = await self._get(
                 path=path,
                 params=params,
                 deserializer=deserializer,
@@ -213,10 +215,10 @@ class BaseClient:
                 decoded = self._decode(resp)
             except ValueError as e:
                 print(f"Error decoding json response: {e}")
-                return []
+                return
 
             if result_key not in decoded:
-                return []
+                return
             for t in decoded[result_key]:
                 yield deserializer(t)
             if "next_url" in decoded:

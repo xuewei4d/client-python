@@ -1,5 +1,5 @@
 from .base import BaseClient
-from typing import Optional, Any, Dict, List, Union, Iterator
+from typing import Optional, Any, Dict, List, Union, Iterator, Awaitable
 from .models import (
     MarketHoliday,
     MarketStatus,
@@ -514,7 +514,7 @@ class ContractsClient(BaseClient):
         params: Optional[Dict[str, Any]] = None,
         raw: bool = False,
         options: Optional[RequestOptionBuilder] = None,
-    ) -> Union[Iterator[OptionsContract], HTTPResponse]:
+    ) -> Awaitable[Union[Iterator[OptionsContract], HTTPResponse]]:
         """
         List historical options contracts.
 
