@@ -34,6 +34,8 @@ class BaseClient:
         base: str,
         verbose: bool,
         trace: bool,
+        max_conns_per_sec: int,
+        max_conns_time_span: float,
         custom_json: Optional[Any] = None,
     ):
         if api_key is None:
@@ -70,7 +72,7 @@ class BaseClient:
         #     retries=retry_strategy,  # use the customized Retry instance
         # )
         self.client = AsyncClient()
-        self.limiter = AsyncLimiter(100, 1)
+        self.limiter = AsyncLimiter(max_conns_per_sec, max_conns_time_span)
 
         self.timeout = urllib3.Timeout(connect=connect_timeout, read=read_timeout)
 
@@ -113,7 +115,9 @@ class BaseClient:
             resp = await self.client.get(
             self.BASE + path,
             params=params,
-            headers=headers)
+            headers=headers,
+            timeout=None)
+            resp.raise_for_status()
 
         if self.trace:
             resp_headers_dict = dict(resp.headers.items())

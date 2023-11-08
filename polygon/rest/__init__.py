@@ -46,6 +46,8 @@ class RESTClient(
         base: str = BASE,
         verbose: bool = False,
         trace: bool = False,
+        max_conns_per_sec: int = 1,
+        max_conns_time_span: float = 0.005,
         custom_json: Optional[Any] = None,
     ):
         super().__init__(
@@ -57,6 +59,8 @@ class RESTClient(
             base=base,
             verbose=verbose,
             trace=trace,
+            max_conns_per_sec=max_conns_per_sec,
+            max_conns_time_span=max_conns_time_span,
             custom_json=custom_json,
         )
         self.vx = VXClient(
@@ -68,5 +72,7 @@ class RESTClient(
             base=base,
             verbose=verbose,
             trace=trace,
+            max_conns_per_sec=max_conns_per_sec,
+            max_conns_time_span=max_conns_time_span,
             custom_json=custom_json,
         )
